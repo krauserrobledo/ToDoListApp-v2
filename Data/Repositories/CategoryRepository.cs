@@ -1,8 +1,7 @@
 ﻿using Application.Abstractions;
-using Domain.Models;
-using Task = System.Threading.Tasks.Task;
-using Microsoft.EntityFrameworkCore;
 using Data.Tools;
+using Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Data.Repositories

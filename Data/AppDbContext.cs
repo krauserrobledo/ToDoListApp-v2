@@ -1,10 +1,5 @@
 ﻿using Domain.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Data
 {
@@ -27,6 +22,15 @@ namespace Data
         public DbSet<TaskTag> TaskTags { get; set; } = null!;
 
         public DbSet<TaskCategory> TaskCategories { get; set; } = null!;
+
+        // Apply all configurations from the current assembly
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        }
+     }
         /**
         src/
 ├── Domain/
