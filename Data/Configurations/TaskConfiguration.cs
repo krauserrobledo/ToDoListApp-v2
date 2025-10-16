@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Data.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Tasks = Domain.Models.Task;
 
@@ -28,11 +29,11 @@ namespace Data.Configurations
                 .HasMaxLength(50)
                 .HasDefaultValue("Non Started");
             // Relationships
-            builder.HasOne(t => t.CreatedBy)
+            builder.HasOne<ApplicationUser>()
                 .WithMany(u => u.Tasks)
                 .HasForeignKey("UserId") // Shadow property for FK
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
             builder.HasMany(t => t.TaskCategories)
                 .WithOne(tc => tc.Task)
                 .HasForeignKey(tc => tc.TaskId)
@@ -47,7 +48,7 @@ namespace Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
-            builder.HasIndex(t => new { t.Title, t.CreatedBy })
+            builder.HasIndex(t => new { t.Title, t.UserId })
                 .IsUnique(); // Unique index to prevent duplicate task titles for the same user
         }
     }

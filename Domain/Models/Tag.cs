@@ -10,7 +10,5 @@ public class Tag
 
     public virtual ICollection<TaskTag> TaskTags { get; set; } = new List<TaskTag>();
 
-    public virtual User CreatedBy { get; set; } = null!;
-
 
 }

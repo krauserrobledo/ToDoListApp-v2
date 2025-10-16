@@ -1,15 +1,15 @@
 ﻿using Domain.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext
     {
         public AppDbContext(DbContextOptions options) : base(options)
         {
 
         }
-        public DbSet<User> Users { get; set; } = null!;
 
         public DbSet<Domain.Models.Task> Tasks { get; set; } = null!;
 

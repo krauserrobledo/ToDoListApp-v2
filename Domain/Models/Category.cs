@@ -1,4 +1,7 @@
-﻿namespace Domain.Models;
+﻿
+
+namespace Domain.Models;
+
 
 public class Category
 {
@@ -11,9 +14,5 @@ public class Category
     public required string UserId { get; set; }
 
     public virtual ICollection<TaskCategory> TaskCategories { get; set; } = new List<TaskCategory>();
-
-
-    public virtual User? CreatedBy { get; set; }
-
 
 }

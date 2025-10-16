@@ -126,8 +126,8 @@ namespace Data.Repositories
                 throw new ArgumentNullException(nameof(task), "Task cannot be null.");
             if (string.IsNullOrWhiteSpace(task.Title))
                 throw new ArgumentException("Task title cannot be null or whitespace.", nameof(task.Title));
-            if (string.IsNullOrWhiteSpace(task.CreatedBy.Id))
-                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.CreatedBy.Id));
+            if (string.IsNullOrWhiteSpace(task.UserId))
+                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.UserId));
 
             // Generate a new GUID for the ID if not provided
             if (string.IsNullOrEmpty(task.Id) || string.IsNullOrWhiteSpace(task.Id))
@@ -138,7 +138,7 @@ namespace Data.Repositories
 
             // Clean up and initialize collections
             task.Title = task.Title.Trim();
-            task.CreatedBy.Id = task.CreatedBy.Id.Trim();
+            task.UserId = task.UserId.Trim();
             task.Description = task.Description?.Trim();
             task.TaskCategories = new List<TaskCategory>();
             task.TaskTags = new List<TaskTag>();
@@ -192,7 +192,7 @@ namespace Data.Repositories
                 throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
             // Retrieve tasks
             var tasks = await _context.Tasks
-                .Where(t => t.CreatedBy.Id == userId)
+                .Where(t => t.UserId == userId)
                 .ToListAsync();
             return tasks;
         }
@@ -206,7 +206,7 @@ namespace Data.Repositories
                 throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
             // Retrieve tasks with related entities
             var tasks = await _context.Tasks
-                .Where(t => t.CreatedBy.Id == userId)
+                .Where(t => t.UserId == userId)
                 .Include(t => t.TaskCategories)
                     .ThenInclude(tc => tc.Category)
                 .Include(t => t.TaskTags)
@@ -225,7 +225,7 @@ namespace Data.Repositories
                 throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
             // Retrieve tasks with related entities
             var tasks = await _context.Tasks
-                .Where(t => t.CreatedBy.Id == userId)
+                .Where(t => t.UserId == userId)
                 .Include(t => t.TaskCategories)
                     .ThenInclude(tc => tc.Category)
                 .Include(t => t.TaskTags)
@@ -312,8 +312,8 @@ namespace Data.Repositories
                 throw new ArgumentException("Task ID cannot be whitespace.", nameof(task.Id));
             if (string.IsNullOrWhiteSpace(task.Title))
                 throw new ArgumentException("Task title cannot be null or whitespace.", nameof(task.Title));
-            if (string.IsNullOrWhiteSpace(task.CreatedBy.Id))
-                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.CreatedBy.Id));
+            if (string.IsNullOrWhiteSpace(task.UserId))
+                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.UserId));
             // Retrieve existing task
             var existingTask = await _context.Tasks.FindAsync(task.Id);
             if (existingTask == null)
@@ -327,8 +327,8 @@ namespace Data.Repositories
                 existingTask.DueDate = task.DueDate;
             if (!string.IsNullOrWhiteSpace(task.Status))
                 existingTask.Status = task.Status.Trim();
-            if (!string.IsNullOrWhiteSpace(task.CreatedBy.Id))
-                existingTask.CreatedBy.Id = task.CreatedBy.Id.Trim();
+            if (!string.IsNullOrWhiteSpace(task.UserId))
+                existingTask.UserId = task.UserId.Trim();
             if (existingTask != null)
             {
                 // Update navigation properties if provided
