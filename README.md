@@ -129,12 +129,14 @@
 
 - Created folders:
 
-	- DTOs
-   	- Endpoints
+	- DTOs.
+   	- Endpoints.
 
 - DTO and endpoints for auth and other entities added.
 
-- Configuration for JWT added to PRogram.CS
+- Configuration for JWT added to Program.cs.
+
+- Maps endpoints Registered in Program.cs
 
 # ***8. Next Week´s Sprint (10/20)***
 
