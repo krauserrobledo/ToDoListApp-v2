@@ -73,7 +73,9 @@
 
 	*Modified configurations to implement Identity User.
 
-- Identity Folder added to contain Application user model
+- Identity Folder added to contain Application user model.
+
+- Migrations folder generated in this Layer for Data Base Migration
 
 # ***6. Application Layer.***
 	
@@ -112,3 +114,12 @@
     - Microsoft.EntityFrameworkCore.SqlServer.
     - Microsoft.EntityFrameworkCore.
     - Microsoft.EntityFrameworkCore.Tools
+
+# ***8. Next Week´s Sprint (10/20)***
+
+- Modificate Repositories for Linq Qeries addition.
+- Middlewares.
+- JWT
+- Minimal API Controllers Based.
+- Start Angular Learning. 	
+	
