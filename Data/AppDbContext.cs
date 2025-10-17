@@ -31,8 +31,8 @@ namespace Data
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         }
      }
-        /**
-        src/
+    /**
+    src/
 ├── Domain/
 │   ├── Entities/           # models (User, Task, etc.)
 │   └── Interfaces/         # IAppDbContext, repository
@@ -44,45 +44,44 @@ namespace Data
 └── Web/                    # API 
 
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<TaskTag>()
-                .HasKey(tt => new { tt.TaskId, tt.TagId });
-            modelBuilder.Entity<TaskTag>()
-                .HasOne(tt => tt.Task)
-                .WithMany(t => t.TaskTags)
-                .HasForeignKey(tt => tt.TaskId);
-            modelBuilder.Entity<TaskTag>()
-                .HasOne(tt => tt.Tag)
-                .WithMany(t => t.TaskTags)
-                .HasForeignKey(tt => tt.TagId);
-            modelBuilder.Entity<TaskCategory>()
-                .HasKey(tc => new { tc.TaskId, tc.CategoryId });
-            modelBuilder.Entity<TaskCategory>()
-                .HasOne(tc => tc.Task)
-                .WithMany(t => t.TaskCategories)
-                .HasForeignKey(tc => tc.TaskId);
-            modelBuilder.Entity<TaskCategory>()
-                .HasOne(tc => tc.Category)
-                .WithMany(c => c.TaskCategories)
-                .HasForeignKey(tc => tc.CategoryId);
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Tasks)
-                .WithOne(t => t.CreatedBy)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Tags)
-                .WithOne(t => t.CreatedBy)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Categories)
-                .WithOne(c => c.CreatedBy)
-                .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        }
-        **/
-    }
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<TaskTag>()
+            .HasKey(tt => new { tt.TaskId, tt.TagId });
+        modelBuilder.Entity<TaskTag>()
+            .HasOne(tt => tt.Task)
+            .WithMany(t => t.TaskTags)
+            .HasForeignKey(tt => tt.TaskId);
+        modelBuilder.Entity<TaskTag>()
+            .HasOne(tt => tt.Tag)
+            .WithMany(t => t.TaskTags)
+            .HasForeignKey(tt => tt.TagId);
+        modelBuilder.Entity<TaskCategory>()
+            .HasKey(tc => new { tc.TaskId, tc.CategoryId });
+        modelBuilder.Entity<TaskCategory>()
+            .HasOne(tc => tc.Task)
+            .WithMany(t => t.TaskCategories)
+            .HasForeignKey(tc => tc.TaskId);
+        modelBuilder.Entity<TaskCategory>()
+            .HasOne(tc => tc.Category)
+            .WithMany(c => c.TaskCategories)
+            .HasForeignKey(tc => tc.CategoryId);
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.Tasks)
+            .WithOne(t => t.CreatedBy)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.Tags)
+            .WithOne(t => t.CreatedBy)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.Categories)
+            .WithOne(c => c.CreatedBy)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    **/
 }
+        

@@ -6,14 +6,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-// var for connection string
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Add services to the container.
 
 // Add DbContext with SQL Server provider
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(connectionString));
-
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Identity DI
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
