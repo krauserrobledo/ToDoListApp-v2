@@ -36,6 +36,7 @@
 # ***5. Data Layer.***
 
 - AppDbContext file created inside Data layer.
+
 - Configurations added :
 
 ```
@@ -81,17 +82,27 @@
 	
 - Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern.
 
-  - ICategoryRepository
+  - -ICategoryRepository
   - ISubTaskRepository
   - ITagRepository
   - ITaskRepository
   - IuserRepository (Deleted)
+  - ITokenService
+ 
+- Services folder created containing:
 
+  - TokenService
+
+- References added for projects:
+  
+	- Data.
+ 	- Domain.
+ 
 # ***7. Minimal API.***
 
-  - This project is set as single startup project in Solution.
+- This project is set as single startup project in Solution.
     
-  - Repositories Dependency Injection register in Program.cs :
+- Repositories Dependency Injection register in Program.cs :
 
   ```
     builder.Services.AddScoped<ITaskRepository,TaskRepository>();
@@ -100,26 +111,36 @@
     builder.Services.AddScoped<ISubTaskRepository, SubTaskRepository>();
   ```
 
-  - DbContext Dependency Injection register in Program.cs:
+- DbContext Dependency Injection register in Program.cs:
+	
   ```
     builder.Services.AddDbContext<AppDbContext>();   
   ```
 
-  - Dependency Injection for Identity implementation in Program.cs.
+- Dependency Injection for Identity implementation in Program.cs.
   
-  - Connection String added on appsettings.json.
+- "Connection String" and "JwtSettings" added on appsettings.json.
 
-  - Packages installation:
+- Packages installation:
 
-    - Microsoft.EntityFrameworkCore.SqlServer.
-    - Microsoft.EntityFrameworkCore.
-    - Microsoft.EntityFrameworkCore.Tools
+	- Microsoft.EntityFrameworkCore.SqlServer.
+	- Microsoft.EntityFrameworkCore.
+	- Microsoft.EntityFrameworkCore.Tools.
+
+- Created folders:
+
+	- DTOs
+   	- Endpoints
+
+- DTO and endpoints for auth and other entities added.
+
+- Configuration for JWT added to PRogram.CS
 
 # ***8. Next Week´s Sprint (10/20)***
 
 - Modificate Repositories for Linq Qeries addition.
 - Middlewares.
 - JWT
-- Minimal API Controllers Based.
+- Minimal API Controllers Based finishing.
 - Start Angular Learning. 	
 	
