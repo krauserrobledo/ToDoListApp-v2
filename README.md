@@ -87,6 +87,8 @@
 
 - Abstractions/ITokenService.cs moved from Appplication project to solve Dependency Cycle.
 
+- Services/TokenService.cs moved from Application Layer to solve dependency Cycle.
+
 # ***6. Application Layer.***
 	
 - Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern. (Moved To Domain Project to solve dependency Cycle)
@@ -97,6 +99,8 @@
   - ITaskRepository
   - IuserRepository (Deleted)
   - ITokenService (Moved)
+ 
+  - Service/Token service implementation (Moved to Data Layer).
 
 # ***7. Minimal API.***
 
