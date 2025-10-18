@@ -140,6 +140,7 @@
 
 # ***8. Next Week´s Sprint (10/20)***
 
+- Solve  DEPENDENCY CYCLE between Application and Data
 - Modificate Repositories for Linq Qeries addition.
 - Middlewares.
 - JWT
