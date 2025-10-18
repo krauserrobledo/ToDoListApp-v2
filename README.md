@@ -143,7 +143,7 @@
 - Solve  DEPENDENCY CYCLE between Application and Data
 - Modificate Repositories for Linq Qeries addition.
 - Middlewares.
-- JWT
+- JWT finishing.
 - Minimal API Controllers Based finishing.
 - Start Angular Learning. 	
 	
