@@ -151,4 +151,11 @@
   # ***Linq Queries***
 
   - All Repositories classes were modified to implement LINQ syntax queries
+ 
+  # ***Middleware***
+
+  - Middleware folder created in minimal api Layer.
+  - Created ExceptionHandlingMiddleware.cs for global exception handler.
+  - Created RequestLoginMiddleware to help in console debug.
+  - Middleware Registered in program.cs
 
