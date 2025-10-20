@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using MinimalApi.Endpoints;
 using System.Text;
 using Data.Abstractions;
+using MinimalApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,8 +80,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// M
-
+// Custom Middlewares
+app.UseExceptionHandlingMiddleware();
+app.UseRequestLogginMiddleware();
 // HTTPS Middleware
 app.UseHttpsRedirection();
 // JWT Middleware
