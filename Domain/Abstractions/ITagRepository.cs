@@ -1,6 +1,6 @@
 ﻿using Domain.Models;
 
-namespace Application.Abstractions
+namespace Domain.Abstractions
 {
     public interface ITagRepository
     {

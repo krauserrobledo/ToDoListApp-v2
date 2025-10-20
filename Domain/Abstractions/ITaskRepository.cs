@@ -1,6 +1,6 @@
 ﻿using Tasks = Domain.Models.Task;
 
-namespace Application.Abstractions
+namespace Domain.Abstractions
 {
     public interface ITaskRepository
     {

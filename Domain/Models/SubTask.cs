@@ -1,4 +1,5 @@
-﻿namespace Domain.Models;
+﻿
+namespace Domain.Models;
 
 public class Subtask
 {
@@ -9,6 +10,5 @@ public class Subtask
     public string Title { get; set; } = null!;
 
     public virtual Task Task { get; set; } = null!;
-
 
 }
