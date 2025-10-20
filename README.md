@@ -117,7 +117,7 @@
     - Microsoft.EntityFrameworkCore.
     - Microsoft.EntityFrameworkCore.Tools
 
-# *** Next Week´s Sprint (10/20)***
+# ***Next Week´s Sprint (10/20)***
 
 - JWT
 - Solve DEPENDENCY CYCLE between Application and Data.
@@ -126,7 +126,7 @@
 - Minimal API Controllers Based.
 - Start Angular Learning.
 
-# *** JWT ***
+# ***JWT***
 
 - Add configurations in appsetting.json.
 - Interface ITokenService.cs creation in Data/Abstractions.
@@ -135,7 +135,7 @@
 - Auth endpoints and DTO's creation.
 - Identity integration.
 
-# *** Solving Dependency Cycle ***
+# ***Solving Dependency Cycle***
 
 - Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern Moved To Domain Project to solve dependency Cycle.
 
@@ -147,4 +147,8 @@
 - Abstractions/ITokenService.cs moved from Appplication project to solve Dependency Cycle.
 
 - Services/TokenService.cs moved from Application Layer to solve dependency Cycle.
+
+  # ***Linq Queries***
+
+  - All Repositories classes were modified to implement LINQ syntax queries
 
