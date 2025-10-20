@@ -79,12 +79,13 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+// HTTPS Middleware
+app.UseHttpsRedirection();
 
 // Custom Middlewares
 app.UseExceptionHandlingMiddleware();
 app.UseRequestLogginMiddleware();
-// HTTPS Middleware
-app.UseHttpsRedirection();
+
 // JWT Middleware
 app.UseAuthentication();
 // Auth Middleware
