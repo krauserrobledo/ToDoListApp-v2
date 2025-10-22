@@ -130,7 +130,6 @@ namespace MinimalApi.Endpoints
         }
         private static async Task<IResult> DeleteTask(
             string id,
-            TaskDeleteDTO request,
             ITaskRepository taskRepository,
             HttpContext context)
         {

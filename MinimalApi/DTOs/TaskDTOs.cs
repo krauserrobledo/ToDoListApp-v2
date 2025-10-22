@@ -18,7 +18,4 @@
         string Status,
         List<int> TagIds,
         List<int> CategoryIds);
-
-    public record TaskDeleteDTO(int Id);
-
 }

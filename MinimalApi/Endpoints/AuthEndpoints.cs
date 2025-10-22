@@ -13,9 +13,12 @@ namespace MinimalApi.Endpoints
             var group = app.MapGroup("/api/auth")
                 .WithTags("Authentication");
             // Defined auth-related endpoints
-            group.MapPost("/register", Register);
-            group.MapPost("/login", Login);
-            group.MapPost("/validate", ValidateToken);
+            group.MapPost("/register", Register)
+                .WithSummary("Create a new user");
+            group.MapPost("/login", Login)
+                .WithSummary("login using Email and Password");
+            group.MapPost("/validate", ValidateToken)
+                .WithSummary("Token validations");
 
         }
 

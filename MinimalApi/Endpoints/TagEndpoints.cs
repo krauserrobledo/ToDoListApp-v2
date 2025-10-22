@@ -117,8 +117,7 @@ namespace MinimalApi.Endpoints
         }
 
         private static async Task<IResult> DeleteTag(
-            string id, 
-            [FromBody] TagDeleteDTO request,
+            string id,
             ITagRepository tagRepository,
             HttpContext context)
         {
@@ -223,7 +222,5 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($" Error getting Tags: {ex.Message}");
             }
         }
-
-       
     }
 }

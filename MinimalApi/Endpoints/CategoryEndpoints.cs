@@ -1,4 +1,5 @@
 ﻿using Domain.Abstractions;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using MinimalApi.DTOs;
 
@@ -86,18 +87,25 @@ namespace MinimalApi.Endpoints
             // Logic to update a category
             try
             {
+                
                 // Check if exists 
                 var existingCategory = await categoryRepository.GetCategoryById(id);
                 if (existingCategory == null)
                 {
                     return Results.NotFound($"Category not found");
                 }
+                // Limit update by user
+                var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (userId != existingCategory.UserId)
+                    return Results.Unauthorized();
                 // Check for duplicate name
                 var nameExists = await categoryRepository.CategoryNameExists(request.Name, existingCategory.UserId);
                 if (nameExists)
                 {
                     return Results.Conflict("A category with the same name already exists for this user.");
                 }
+                // Color Validation
+
                 existingCategory.Name = request.Name;
 
                 existingCategory.Color = request.Color;
@@ -124,7 +132,6 @@ namespace MinimalApi.Endpoints
 
         private static async Task<IResult> DeleteCategory(
             string id,
-            [FromBody] CategoryDeleteDTO request,
             ICategoryRepository categoryRepository,
             HttpContext context)
         {

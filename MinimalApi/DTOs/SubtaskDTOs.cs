@@ -5,7 +5,5 @@
 
     public record SubtaskUpdateDTO(string Id, string Title);
 
-    public record SubtaskDeleteDTO(string Id);
-
 
 }
