@@ -97,7 +97,7 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Category?> GetCategoryByTaskId(string taskId, string userId)
+        public async Task<ICollection<Category>> GetCategoriesByTaskId(string taskId, string userId)
         {
             // Validate input and retrieve using LINQ
             return await _context.Categories
@@ -108,7 +108,7 @@ namespace Data.Repositories
                       (c, tc) => new { Category = c, TaskCategory = tc })
                 .Where(joined => joined.TaskCategory.TaskId == taskId)
                 .Select(joined => joined.Category)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
         }
 
         public async Task<Category?> GetCategoryById(string categoryId)

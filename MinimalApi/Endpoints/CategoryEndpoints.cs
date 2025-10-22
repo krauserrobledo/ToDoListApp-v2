@@ -28,9 +28,6 @@ namespace MinimalApi.Endpoints
             group.MapGet("/user/{userId}", GetCategoriesByUser)
                 .WithSummary("Get Categories by User ID")
                 .RequireAuthorization();
-            group.MapGet("/task/{taskId}/user/{userId}", GetCategoryByTaskId)
-                .RequireAuthorization()
-                .WithSummary("Get Category by Task ID and User ID");
         }
         private static async Task<IResult> CreateCategory(
             [FromBody] CategoryCreateDTO request,
@@ -184,13 +181,16 @@ namespace MinimalApi.Endpoints
             }
         }
         private static async Task<IResult> GetCategoriesByUser(
-            string userId,
             ICategoryRepository categoryRepository,
             HttpContext context)
+
         {
             // Logic to get categories by user
             try
             {
+                // Check user 
+                var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
                 var categories = await categoryRepository.GetCategoriesByUser(userId);
                 return Results.Ok(categories.Select(c => new
                 {
@@ -202,38 +202,6 @@ namespace MinimalApi.Endpoints
             catch (Exception ex)
             {
                 return Results.Problem($"Error while retrieving Categories: {ex.Message}");
-            }
-        }
-        private static async Task<IResult> GetCategoryByTaskId(
-            string taskId,
-            string userId,
-            ICategoryRepository categoryRepository,
-            ITaskRepository taskRepository)
-        {
-            // Logic to get category by task ID and user ID
-            try
-            {
-                // Verify task exists and belongs to user
-                var task = await taskRepository.GetTaskById(taskId);
-                if (task == null || task.UserId != userId)
-                {
-                    return Results.NotFound($"Task with ID {taskId} not found for the specified user.");
-                }
-                var category = await categoryRepository.GetCategoryByTaskId(taskId, userId);
-                if (category == null)
-                {
-                    return Results.NotFound($"No category associated with Task ID {taskId} for the specified user.");
-                }
-                return Results.Ok(new
-                {
-                    id = category.Id,
-                    name = category.Name,
-                    color = category.Color
-                });
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem($"Error while retrieving Category for Task: {ex.Message}");
             }
         }
     }

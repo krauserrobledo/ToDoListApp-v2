@@ -5,10 +5,8 @@
         string Title,
         string Description,
         DateTime? DueDate,
-        string Status,
-        List<int> TagIds,
-        List<int> CategoryIds,
-        string User);
+        string Status
+        );
 
     public record TaskUpdateDTO(
         int Id,
