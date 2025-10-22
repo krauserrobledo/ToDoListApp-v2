@@ -1,6 +1,7 @@
 ﻿using Domain.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using MinimalApi.DTOs;
+using System.Security.Claims;
 
 namespace MinimalApi.Endpoints
 {
@@ -9,28 +10,27 @@ namespace MinimalApi.Endpoints
         public static void MapTaskEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/api/tasks")
-                .WithTags("Tasks");
+                .WithTags("Tasks")
+                .RequireAuthorization();
             // Defined task-related endpoints
             group.MapPost("/", CreateTask)
                 .WithSummary("Create a Task");
             group.MapPut("/{id}", UpdateTask)
                 .WithSummary("Update a Task");
+            group.MapDelete("/{id}", DeleteTask)
+                .WithSummary("Remove selected Task by Id");
+            group.MapGet("/{id}", GetTaskById)
+                .WithSummary("Get Task by Id");
+            group.MapGet("/user/{userId}", GetTasksByUser)
+                .WithSummary("Get Tasks by User Id with Details");
             group.MapPost("/{taskId}/categories/{categoryId}", AddCategoryToTask)
                 .WithSummary("Add Category to existing task");
             group.MapPost("/{taskId}/tags/{tagId}", AddTagToTask)
                 .WithSummary("Add Tag to existing Task");
-            group.MapDelete("/{id}", DeleteTask)
-                .WithSummary("Remove selected Task by Id");
             group.MapDelete("/{taskId}/categories/{categoryId}", RemoveCategoryFromTask)
                 .WithSummary("Remove selected category from Task by Id");
             group.MapDelete("/{taskId}/tags/{tagId}", RemoveTagFromTask)
-                .WithSummary("Remove selected Tag from Task by Id");
-            group.MapGet("/{id}", GetTaskById)
-                .WithSummary("Get Task by Id");
-            group.MapGet("/user/{userId}", GetTasksByUserWithDetails)
-                .WithSummary("Get Tasks by User Id with Details");
-            group.MapGet("/user/{userId}/details", GetTaskWithDetails)
-                .WithSummary("Get Tasks By user with Categories and Tags related by Id");
+                .WithSummary("Remove selected Tag from Task by Id");            
         }
         private static async Task<IResult> CreateTask(
             [FromBody] TaskCreateDTO request,
@@ -53,6 +53,11 @@ namespace MinimalApi.Endpoints
                 {
                     return Results.Conflict("A task with the same title already exists for this user.");
                 }
+                // Validate status
+                if (!Domain.Constants.TaskStatus.IsValid(request.Status))
+                {
+                    return Results.BadRequest("Invalid task status.");
+                }
                 // Create new Task entity
                 var newTask = new Domain.Models.Task
                 {
@@ -60,7 +65,7 @@ namespace MinimalApi.Endpoints
                     Title = request.Title.Trim(),
                     Description = request.Description?.Trim(),
                     DueDate = request.DueDate,
-                    Status = "Non Started",
+                    Status = request.Status,
                     UserId = userId
                 };
                 // Save to repository
@@ -188,8 +193,7 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error while retrieving Task: {ex.Message}");
             }
         }
-        private static async Task<IResult> GetTasksByUserWithDetails(
-            string userId,
+        private static async Task<IResult> GetTasksByUser(
             ITaskRepository taskRepository,
             ICategoryRepository categoryRepository,
             ITagRepository tagRepository,
@@ -198,6 +202,10 @@ namespace MinimalApi.Endpoints
             // Logic to get tasks by user ID
             try
             {
+                var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
+
                 // Retrieve tasks with details
                 var tasks = await taskRepository.GetTasksByUserWithDetails(userId);
                 return Results.Ok(tasks.Select(t => new
@@ -223,8 +231,7 @@ namespace MinimalApi.Endpoints
                         .Select(tag => new
                         {
                             id = tag.Id,
-                            name = tag.Name,
-                            userId = tag.UserId
+                            name = tag.Name
                         })
                 }));
             }
@@ -234,55 +241,9 @@ namespace MinimalApi.Endpoints
             }
         }
 
-        private static async Task<IResult> GetTaskWithDetails(
-            string userId,
-            ITagRepository tagRepository,
-            ITaskRepository taskRepository,
-            ICategoryRepository categoryRepository,
-            HttpContext context)
-        {
-            // Logic to get tasks by user ID
-            try
-            {
-                // Retrieve tasks with details
-                var tasks = await taskRepository.GetTasksByUserWithDetails(userId);
-                return Results.Ok(tasks.Select(t => new
-                {
-                    id = t.Id,
-                    title = t.Title,
-                    description = t.Description,
-                    dueDate = t.DueDate,
-                    status = t.Status,
-                    categories = categoryRepository
-                        .GetCategoriesByUser(userId)
-                        .Result
-                        .Where(c => t.TaskCategories.Any(tc => tc.TaskId == t.Id))
-                        .Select(c => new
-                        {
-                            id = c.Id,
-                            name = c.Name,
-                            color = c.Color
-                        }),
-                    tags = tagRepository
-                        .GetTagsByTask(t.Id, userId)
-                        .Result
-                        .Select(tag => new
-                        {
-                            id = tag.Id,
-                            name = tag.Name,
-                            userId = tag.UserId
-                        })
-                }));
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem($"Error while retrieving Tasks: {ex.Message}");
-            }
-        }
         private static async Task<IResult> RemoveCategoryFromTask(
             string taskId, 
             string categoryId,
-            ITagRepository tagRepository,
             ITaskRepository taskRepository,
             ICategoryRepository categoryRepository,
             HttpContext context)
@@ -313,28 +274,27 @@ namespace MinimalApi.Endpoints
             }
         }
         private static async Task<IResult> RemoveTagFromTask(
-            string taskId, 
             string tagId,
+            string taskId,
             ITagRepository tagRepository,
             ITaskRepository taskRepository,
-            ICategoryRepository categoryRepository,
             HttpContext context)
         {
             // Logic to delete a task
             try
             {
+                // Get User From context
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
                 // Check if task exists
                 var existingTask = await taskRepository.GetTaskById(taskId);
-                if (existingTask == null)
-                {
+                if (existingTask == null || existingTask.UserId != userId)
                     return Results.NotFound($"Task not found");
-                }
                 // Check if tag exists
                 var existingTag = await tagRepository.GetTagById(tagId);
-                if (existingTag == null)
-                {
+                if (existingTag == null || existingTag.UserId != userId)
                     return Results.NotFound($"Tag not found");
-                }
                 // Remove tag from task
                 await taskRepository.RemoveTagFromTask(taskId, tagId);
                 return Results.Ok($"Tag {tagId} removed from Task {taskId} successfully");
@@ -357,15 +317,18 @@ namespace MinimalApi.Endpoints
             // Logic to add a category to a task
             try
             {
+                // Get User From context
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
                 // Check if task exists
                 var existingTask = await taskRepository.GetTaskById(taskId);
-                if (existingTask == null)
-                {
+                if (existingTask == null || existingTask.UserId != userId)
                     return Results.NotFound($"Task not found");
-                }
+
                 // Check if category exists
                 var existingCategory = await categoryRepository.GetCategoryById(categoryId);
-                if (existingCategory == null)
+                if (existingCategory == null || existingTask.UserId !=userId)
                 {
                     return Results.NotFound($"Category not found");
                 }
@@ -383,21 +346,24 @@ namespace MinimalApi.Endpoints
             string tagId,
             ITagRepository tagRepository,
             ITaskRepository taskRepository,
-            ICategoryRepository categoryRepository,
             HttpContext context)
         {
             // Logic to add a tag to a task
             try
             {
+                // Get User From context
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
                 // Check if task exists
                 var existingTask = await taskRepository.GetTaskById(taskId);
-                if (existingTask == null)
+                if (existingTask == null || existingTask.UserId != userId)
                 {
                     return Results.NotFound($"Task not found");
                 }
                 // Check if tag exists
                 var existingTag = await tagRepository.GetTagById(tagId);
-                if (existingTag == null)
+                if (existingTag == null || existingTask.UserId != userId)
                 {
                     return Results.NotFound($"Tag not found");
                 }

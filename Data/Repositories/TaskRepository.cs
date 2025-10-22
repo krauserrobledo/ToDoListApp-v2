@@ -1,5 +1,6 @@
 ﻿using Domain.Abstractions;
 using Domain.Models;
+using Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using Task = System.Threading.Tasks.Task;
 using Tasks = Domain.Models.Task;
@@ -13,11 +14,21 @@ namespace Data.Repositories
 
         public async Task<Tasks> CreateTask(Tasks task)
         {
-            // Validate input and check for duplicates using LINQ
+            // Get user ID from task 
+            // Validate input and check for duplicate
             var existingTask = await _context.Tasks
                 .FirstOrDefaultAsync(t => t.Title == task.Title && t.UserId == task.UserId);
             if (existingTask != null)
                 throw new InvalidOperationException("A task with the same title already exists for this user.");
+
+            if (!Domain.Constants.TaskStatus.IsValid(task.Status))
+            {
+                task.Status = Domain.Constants.TaskStatus.NonStarted;
+        }
+
+            // Generate a new GUID for the ID if not provided
+            if (string.IsNullOrEmpty(task.Id) || string.IsNullOrWhiteSpace(task.Id))
+                task.Id = Guid.NewGuid().ToString();
             // Add to DbContext and save changes
             await _context.Tasks.AddAsync(task);
             await _context.SaveChangesAsync();
@@ -117,13 +128,14 @@ namespace Data.Repositories
 
         public async Task RemoveTagFromTask(string taskId, string tagId)
         {
-            // Validate input AND association using LINQ
+            // Validate association using LINQ
             var taskTag = await _context.TaskTags
-                .FirstOrDefaultAsync(tt => tt.TaskId == taskId && tt.TagId == tagId) ?? throw new InvalidOperationException("The tag is not associated with the task.");
+                .FirstOrDefaultAsync(tt => tt.TaskId == taskId && tt.TagId == tagId)
+                ?? throw new InvalidOperationException("The tag is not associated with the task.");
+
             // Remove and save
             _context.TaskTags.Remove(taskTag);
             await _context.SaveChangesAsync();
-            return;
         }
 
         public async Task AddCategoryToTask(string taskId, string categoryId)

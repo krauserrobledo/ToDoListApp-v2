@@ -9,11 +9,11 @@
         );
 
     public record TaskUpdateDTO(
-        int Id,
+        string Id,
         string Title,
         string Description,
         DateTime? DueDate,
         string Status,
-        List<int> TagIds,
-        List<int> CategoryIds);
+        List<string> TagIds,
+        List<string> CategoryIds);
 }

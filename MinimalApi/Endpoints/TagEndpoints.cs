@@ -21,8 +21,6 @@ namespace MinimalApi.Endpoints
                 .WithSummary("Delete a Tag by ID");
             group.MapGet("/{id}", GetTagById)
                 .WithSummary("Get a Tag by ID");
-            group.MapGet("/task/{taskId}/user/{userId}", GetTagsByTask).RequireAuthorization()
-                .WithSummary("Get Tags by Task ID and User ID");
             group.MapGet("/user/{userId}", GetTagsByUser).RequireAuthorization()
                 .WithSummary("Get Tags by User ID");
 
@@ -173,47 +171,24 @@ namespace MinimalApi.Endpoints
             {
                 return Results.Problem($" Error getting Tag: {ex.Message}");
             }
-
-        }
-
-        private static async Task<IResult> GetTagsByTask(
-            string taskId,
-            string userId,
-            ITagRepository tagRepository,
-            HttpContext context)
-        {
-            // Logic to get tags by task ID and user ID
-            try
-            {
-                var tags = await tagRepository.GetTagsByTask(taskId, userId);
-                var result = tags.Select(tag => new
-                {
-                    id = tag.Id,
-                    name = tag.Name,
-                    userId = tag.UserId
-                });
-                return Results.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem($" Error getting Tags: {ex.Message}");
-            }
         }
 
         private static async Task<IResult> GetTagsByUser(
-            string userId,
             ITagRepository tagRepository,
-            HttpContext contet)
+            HttpContext context)
         {
             // Logic to get tags by user ID
             try
             {
+                // Get user fromcontext
+                // Check user 
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
                 var tags = await tagRepository.GetTagsByUser(userId);
                 var result = tags.Select(tag => new
                 {
                     id = tag.Id,
-                    name = tag.Name,
-                    userId = tag.UserId
+                    name = tag.Name
                 });
                 return Results.Ok(result);
             }
