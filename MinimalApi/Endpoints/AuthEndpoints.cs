@@ -10,8 +10,9 @@ namespace MinimalApi.Endpoints
     {
         public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/auth");
-
+            var group = app.MapGroup("/api/auth")
+                .WithTags("Authentication");
+            // Defined auth-related endpoints
             group.MapPost("/register", Register);
             group.MapPost("/login", Login);
             group.MapPost("/validate", ValidateToken);

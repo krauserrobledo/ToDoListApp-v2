@@ -9,13 +9,24 @@ namespace MinimalApi.Endpoints
     {
         public static void MapSubtaskEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/subtasks");
+            var group = app.MapGroup("/api/subtasks")
+                .WithTags("Subtasks");
             // Define subtask-related endpoints here
-            group.MapPost("/", CreateSubtask).RequireAuthorization();
-            group.MapPut("/{id}", UpdateSubtask).RequireAuthorization();
-            group.MapDelete("/{id}", DeleteSubtask).RequireAuthorization();
-            group.MapGet("/task/{taskId}", GetAllSubtasksByTask).RequireAuthorization();
-            group.MapGet("/{id}", GetSubtaskById).RequireAuthorization();   
+            group.MapPost("/", CreateSubtask)
+                .WithSummary("Create a new subtask")
+                .RequireAuthorization();
+            group.MapPut("/{id}", UpdateSubtask)
+                .WithSummary("Update an existing subtask")
+                .RequireAuthorization();
+            group.MapDelete("/{id}", DeleteSubtask)
+                .WithSummary("Delete a subtask by ID")
+                .RequireAuthorization();
+            group.MapGet("/task/{taskId}", GetAllSubtasksByTask)
+                .WithSummary("Get all subtasks for a specific task")
+                .RequireAuthorization();
+            group.MapGet("/{id}", GetSubtaskById)
+                .WithSummary("Get a subtask by ID")
+                .RequireAuthorization();   
         }
         private static async Task<IResult> CreateSubtask(
             [FromBody] SubtaskCreateDTO request,

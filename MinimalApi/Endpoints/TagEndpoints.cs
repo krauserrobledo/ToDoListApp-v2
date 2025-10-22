@@ -10,14 +10,21 @@ namespace MinimalApi.Endpoints
     {
         public static void MapTagEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/tags");
+            var group = app.MapGroup("/api/tags")
+                .WithTags("Tags");
             // Define tag-related endpoints here
-            group.MapPost("/", CreateTag);
-            group.MapPut("/{id}", UpdateTag);
-            group.MapDelete("/{id}", DeleteTag);
-            group.MapGet("/{id}", GetTagById);
-            group.MapGet("/task/{taskId}/user/{userId}", GetTagsByTask).RequireAuthorization();
-            group.MapGet("/user/{userId}", GetTagsByUser).RequireAuthorization();
+            group.MapPost("/", CreateTag)
+                .WithSummary("Create a new Tag");
+            group.MapPut("/{id}", UpdateTag)
+                .WithSummary("Update an existing Tag");
+            group.MapDelete("/{id}", DeleteTag)
+                .WithSummary("Delete a Tag by ID");
+            group.MapGet("/{id}", GetTagById)
+                .WithSummary("Get a Tag by ID");
+            group.MapGet("/task/{taskId}/user/{userId}", GetTagsByTask).RequireAuthorization()
+                .WithSummary("Get Tags by Task ID and User ID");
+            group.MapGet("/user/{userId}", GetTagsByUser).RequireAuthorization()
+                .WithSummary("Get Tags by User ID");
 
         }
 

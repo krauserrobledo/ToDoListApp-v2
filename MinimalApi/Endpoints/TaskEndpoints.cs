@@ -8,18 +8,29 @@ namespace MinimalApi.Endpoints
     {
         public static void MapTaskEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/tasks");
-            // Define task-related endpoints here
-            group.MapPost("/", CreateTask);
-            group.MapPut("/{id}", UpdateTask);
-            group.MapPost("/{taskId}/categories/{categoryId}", AddCategoryToTask);
-            group.MapPost("/{taskId}/tags/{tagId}", AddTagToTask);
-            group.MapDelete("/{id}", DeleteTask);
-            group.MapDelete("/{taskId}/categories/{categoryId}", RemoveCategoryFromTask);
-            group.MapDelete("/{taskId}/tags/{tagId}", RemoveTagFromTask);
-            group.MapGet("/{id}", GetTaskById);
-            group.MapGet("/user/{userId}", GetTasksByUserWithDetails);
-            group.MapGet("/user/{userId}/details", GetTaskWithDetails);
+            var group = app.MapGroup("/api/tasks")
+                .WithTags("Tasks");
+            // Defined task-related endpoints
+            group.MapPost("/", CreateTask)
+                .WithSummary("Create a Task");
+            group.MapPut("/{id}", UpdateTask)
+                .WithSummary("Update a Task");
+            group.MapPost("/{taskId}/categories/{categoryId}", AddCategoryToTask)
+                .WithSummary("Add Category to existing task");
+            group.MapPost("/{taskId}/tags/{tagId}", AddTagToTask)
+                .WithSummary("Add Tag to existing Task");
+            group.MapDelete("/{id}", DeleteTask)
+                .WithSummary("Remove selected Task by Id");
+            group.MapDelete("/{taskId}/categories/{categoryId}", RemoveCategoryFromTask)
+                .WithSummary("Remove selected category from Task by Id");
+            group.MapDelete("/{taskId}/tags/{tagId}", RemoveTagFromTask)
+                .WithSummary("Remove selected Tag from Task by Id");
+            group.MapGet("/{id}", GetTaskById)
+                .WithSummary("Get Task by Id");
+            group.MapGet("/user/{userId}", GetTasksByUserWithDetails)
+                .WithSummary("Get Tasks by User Id with Details");
+            group.MapGet("/user/{userId}/details", GetTaskWithDetails)
+                .WithSummary("Get Tasks By user with Categories and Tags related by Id");
         }
         private static async Task<IResult> CreateTask(
             [FromBody] TaskCreateDTO request,
@@ -126,9 +137,14 @@ namespace MinimalApi.Endpoints
             // Logic to delete a task
             try
             {
-                // Check if exists
+                // Check if user exists
+                var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
+
+                // Check if task exists and belongs to user
                 var existingTask = await taskRepository.GetTaskById(id);
-                if (existingTask == null)
+                if (existingTask == null || existingTask.UserId != userId)
                 {
                     return Results.NotFound($"Task not found");
                 }
@@ -139,7 +155,7 @@ namespace MinimalApi.Endpoints
                     return Results.Problem("Error deleting task");
                 }
                 // Return response
-                return Results.Ok($"Task {id} deleted successfully");
+                return Results.NoContent();
             }
             catch (Exception ex)
             {

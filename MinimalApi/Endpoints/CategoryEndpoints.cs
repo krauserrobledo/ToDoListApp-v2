@@ -9,14 +9,27 @@ namespace MinimalApi.Endpoints
 
         public static void MapCategoryEndpoints(this IEndpointRouteBuilder app)
         {
-            var group = app.MapGroup("/api/categories");
-            // Define category endpoints here
-            group.MapPost("/", CreateCategory);
-            group.MapPut("/{id}", UpdateCategory);
-            group.MapDelete("/{id}", DeleteCategory);
-            group.MapGet("/{id}", GetCategoryById);
-            group.MapGet("/user/{userId}", GetCategoriesByUser);
-            group.MapGet("/task/{taskId}/user/{userId}", GetCategoryByTaskId).RequireAuthorization();
+            var group = app.MapGroup("/api/categories")
+                .WithTags("Categories");
+            // Defined category endpoints
+            group.MapPost("/", CreateCategory)
+                .WithSummary("Create a new Category")
+                .RequireAuthorization();
+            group.MapPut("/{id}", UpdateCategory)
+                .WithSummary("Update an existing Category")
+                .RequireAuthorization();
+            group.MapDelete("/{id}", DeleteCategory)
+                .WithSummary("Delete a Category by ID")
+                .RequireAuthorization();
+            group.MapGet("/{id}", GetCategoryById)
+                .WithSummary("Get a Category by ID")
+                .RequireAuthorization();                
+            group.MapGet("/user/{userId}", GetCategoriesByUser)
+                .WithSummary("Get Categories by User ID")
+                .RequireAuthorization();
+            group.MapGet("/task/{taskId}/user/{userId}", GetCategoryByTaskId)
+                .RequireAuthorization()
+                .WithSummary("Get Category by Task ID and User ID");
         }
         private static async Task<IResult> CreateCategory(
             [FromBody] CategoryCreateDTO request,
