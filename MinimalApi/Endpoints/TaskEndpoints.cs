@@ -5,8 +5,19 @@ using System.Security.Claims;
 
 namespace MinimalApi.Endpoints
 {
+    /// <summary>
+    /// Contains task-related API endpoints
+    /// </summary>
     public static class TaskEndpoints
     {
+        /// <summary>
+        /// Configures the API endpoints for task-related operations.
+        /// </summary>
+        /// <remarks>This method defines a group of endpoints under the route <c>/api/tasks</c>, which are
+        /// used to manage tasks and their associated categories and tags. The endpoints require authorization and
+        /// include operations for creating, updating, deleting, and retrieving tasks, as well as managing task
+        /// associations with categories and tags.</remarks>
+        /// <param name="app">The <see cref="IEndpointRouteBuilder"/> used to configure the endpoints.</param>
         public static void MapTaskEndpoints(this IEndpointRouteBuilder app)
         {
             var group = app.MapGroup("/api/tasks")
@@ -21,7 +32,7 @@ namespace MinimalApi.Endpoints
                 .WithSummary("Remove selected Task by Id");
             group.MapGet("/{id}", GetTaskById)
                 .WithSummary("Get Task by Id");
-            group.MapGet("/user/{userId}", GetTasksByUser)
+            group.MapGet("/user/", GetTasksByUser)
                 .WithSummary("Get Tasks by User Id with Details");
             group.MapPost("/{taskId}/categories/{categoryId}", AddCategoryToTask)
                 .WithSummary("Add Category to existing task");
@@ -32,6 +43,22 @@ namespace MinimalApi.Endpoints
             group.MapDelete("/{taskId}/tags/{tagId}", RemoveTagFromTask)
                 .WithSummary("Remove selected Tag from Task by Id");            
         }
+        /// <summary>
+        /// Creates a new task for the authenticated user based on the provided request data.
+        /// </summary>
+        /// <remarks>This method validates the input request, ensures the user is authenticated, checks
+        /// for duplicate task titles, and verifies the task status before creating a new task. The created task is
+        /// associated with the authenticated user.</remarks>
+        /// <param name="request">The data required to create the task, including title, description, due date, and status.</param>
+        /// <param name="taskRepository">The repository used to interact with the task data store.</param>
+        /// <param name="context">The HTTP context containing information about the current user and request.</param>
+        /// <returns>An <see cref="IResult"/> representing the outcome of the operation. Possible results include: <list
+        /// type="bullet"> <item><description><see cref="Results.Created"/> if the task is successfully
+        /// created.</description></item> <item><description><see cref="Results.BadRequest"/> if the request data is
+        /// invalid.</description></item> <item><description><see cref="Results.Unauthorized"/> if the user is not
+        /// authenticated.</description></item> <item><description><see cref="Results.Conflict"/> if a task with the
+        /// same title already exists for the user.</description></item> <item><description><see
+        /// cref="Results.Problem"/> if an unexpected error occurs during task creation.</description></item> </list></returns>
         private static async Task<IResult> CreateTask(
             [FromBody] TaskCreateDTO request,
             ITaskRepository taskRepository,
@@ -79,13 +106,26 @@ namespace MinimalApi.Endpoints
                     dueDate = createdTask.DueDate,
                     status = createdTask.Status
                 });
-
             }
             catch (Exception ex)
             {
                 return Results.Problem($"An error occurred while creating the task:{ex.Message}");
             }
         }
+        /// <summary>
+        /// Updates an existing task with the specified details.
+        /// </summary>
+        /// <remarks>This method validates the existence of the task and ensures that the updated title
+        /// does not conflict with another task for the same user. If the update is successful, the updated task details
+        /// are returned.</remarks>
+        /// <param name="id">The unique identifier of the task to update.</param>
+        /// <param name="request">An object containing the updated task details.</param>
+        /// <param name="taskRepository">The repository used to access and update task data.</param>
+        /// <param name="context">The HTTP context associated with the current request.</param>
+        /// <returns>An <see cref="IResult"/> representing the outcome of the operation. Returns <see cref="Results.NotFound"/>
+        /// if the task does not exist, <see cref="Results.Conflict"/> if a task with the same title already exists for
+        /// the user, <see cref="Results.Problem"/> if an error occurs during the update, or <see cref="Results.Ok"/>
+        /// with the updated task details on success.</returns>
         private static async Task<IResult> UpdateTask(
             string id,
             [FromBody] TaskUpdateDTO request,
@@ -133,6 +173,18 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error updating task: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Deletes a task with the specified identifier if it exists and belongs to the authenticated user.
+        /// </summary>
+        /// <param name="id">The unique identifier of the task to delete.</param>
+        /// <param name="taskRepository">The repository used to access and manage tasks.</param>
+        /// <param name="context">The HTTP context containing the authenticated user's information.</param>
+        /// <returns>A result indicating the outcome of the operation: <list type="bullet"> <item><description><see
+        /// cref="Results.Unauthorized"/> if the user is not authenticated.</description></item> <item><description><see
+        /// cref="Results.NotFound"/> if the task does not exist or does not belong to the user.</description></item>
+        /// <item><description><see cref="Results.Problem"/> if an error occurs during deletion.</description></item>
+        /// <item><description><see cref="Results.NoContent"/> if the task is successfully deleted.</description></item>
+        /// </list></returns>
         private static async Task<IResult> DeleteTask(
             string id,
             ITaskRepository taskRepository,
@@ -145,7 +197,6 @@ namespace MinimalApi.Endpoints
                 var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                     return Results.Unauthorized();
-
                 // Check if task exists and belongs to user
                 var existingTask = await taskRepository.GetTaskById(id);
                 if (existingTask == null || existingTask.UserId != userId)
@@ -166,6 +217,15 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error deleting task: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Retrieves a task by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the task to retrieve. Cannot be null or empty.</param>
+        /// <param name="taskRepository">The repository used to access task data.</param>
+        /// <param name="context">The HTTP context associated with the current request.</param>
+        /// <returns>An <see cref="IResult"/> representing the outcome of the operation. Returns <see cref="Results.Ok"/> with
+        /// the task details if the task is found, <see cref="Results.NotFound"/> if the task does not exist, or <see
+        /// cref="Results.Problem"/> if an error occurs during retrieval.</returns>
         private static async Task<IResult> GetTaskById(
             string id,
             ITaskRepository taskRepository,
@@ -193,6 +253,19 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error while retrieving Task: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Retrieves a list of tasks associated with the authenticated user, including their categories and tags.
+        /// </summary>
+        /// <remarks>This method retrieves tasks for the currently authenticated user based on their user
+        /// ID, which is extracted from the HTTP context. Each task includes its details, associated categories, and
+        /// tags. If the user is not authenticated, the method returns an unauthorized response. In case of an error, a
+        /// problem response is returned with the error details.</remarks>
+        /// <param name="taskRepository">The repository used to access task data.</param>
+        /// <param name="categoryRepository">The repository used to access category data.</param>
+        /// <param name="tagRepository">The repository used to access tag data.</param>
+        /// <param name="context">The HTTP context containing the authenticated user's information.</param>
+        /// <returns>An <see cref="IResult"/> containing the tasks with their associated categories and tags if the user is
+        /// authenticated; otherwise, an unauthorized or error response.</returns>
         private static async Task<IResult> GetTasksByUser(
             ITaskRepository taskRepository,
             ICategoryRepository categoryRepository,
@@ -205,7 +278,6 @@ namespace MinimalApi.Endpoints
                 var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                     return Results.Unauthorized();
-
                 // Retrieve tasks with details
                 var tasks = await taskRepository.GetTasksByUserWithDetails(userId);
                 return Results.Ok(tasks.Select(t => new
@@ -240,7 +312,15 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error while retrieving Tasks: {ex.Message}");
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <param name="categoryId"></param>
+        /// <param name="taskRepository"></param>
+        /// <param name="categoryRepository"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         private static async Task<IResult> RemoveCategoryFromTask(
             string taskId, 
             string categoryId,
@@ -270,9 +350,17 @@ namespace MinimalApi.Endpoints
             catch (Exception ex)
             {
                 return Results.Problem($"Error removing category from task: {ex.Message}");
-
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tagId"></param>
+        /// <param name="taskId"></param>
+        /// <param name="tagRepository"></param>
+        /// <param name="taskRepository"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         private static async Task<IResult> RemoveTagFromTask(
             string tagId,
             string taskId,
@@ -298,15 +386,21 @@ namespace MinimalApi.Endpoints
                 // Remove tag from task
                 await taskRepository.RemoveTagFromTask(taskId, tagId);
                 return Results.Ok($"Tag {tagId} removed from Task {taskId} successfully");
-
             }
             catch (Exception ex)
             {
                 return Results.Problem($"Error removing tag from task: {ex.Message}");
             }
-
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <param name="categoryId"></param>
+        /// <param name="taskRepository"></param>
+        /// <param name="categoryRepository"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         private static async Task<IResult> AddCategoryToTask(
             string taskId, 
             string categoryId,
@@ -325,7 +419,6 @@ namespace MinimalApi.Endpoints
                 var existingTask = await taskRepository.GetTaskById(taskId);
                 if (existingTask == null || existingTask.UserId != userId)
                     return Results.NotFound($"Task not found");
-
                 // Check if category exists
                 var existingCategory = await categoryRepository.GetCategoryById(categoryId);
                 if (existingCategory == null || existingTask.UserId !=userId)
@@ -341,6 +434,15 @@ namespace MinimalApi.Endpoints
                 return Results.Problem($"Error adding category to task: {ex.Message}");
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <param name="tagId"></param>
+        /// <param name="tagRepository"></param>
+        /// <param name="taskRepository"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         private static async Task<IResult> AddTagToTask(
             string taskId,
             string tagId,
@@ -370,7 +472,6 @@ namespace MinimalApi.Endpoints
                 // Add tag to task
                 await taskRepository.AddTagToTask(taskId, tagId);
                 return Results.Ok($"Tag {tagId} added to Task {taskId} successfully");
-
             }
             catch (Exception ex)
             {

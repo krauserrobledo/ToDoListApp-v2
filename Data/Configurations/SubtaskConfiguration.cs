@@ -2,8 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Infrastructure.Data.Configurations
+namespace Data.Configurations
 {
+    /// <summary>
+    /// Configures the entity type for the <see cref="Subtask"/> class.
+    /// </summary>
+    /// <remarks>This configuration defines the table name, primary key, property constraints, relationships,
+    /// and indexes for the <see cref="Subtask"/> entity. It ensures that the entity is mapped correctly to the database
+    /// schema.</remarks>
     public class SubtaskConfiguration : IEntityTypeConfiguration<Subtask>
     {
         public void Configure(EntityTypeBuilder<Subtask> builder)
@@ -30,7 +36,6 @@ namespace Infrastructure.Data.Configurations
             // Indexes
             builder.HasIndex(st => st.TaskId)
                 .IsUnique();
-
         }
     }
 }

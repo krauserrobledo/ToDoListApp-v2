@@ -4,6 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Data.Configurations
 {
+    /// <summary>
+    /// Configures the entity type <see cref="Tag"/> for the database context.
+    /// </summary>
+    /// <remarks>This configuration defines the table name, primary key, property constraints, relationships,
+    /// and indexes for the <see cref="Tag"/> entity. It ensures that each tag has a unique combination of name and user
+    /// ID, and enforces cascading deletes for related <see cref="TaskTag"/> entities.</remarks>
     public class TagConfiguration : IEntityTypeConfiguration<Tag>
     {
         public void Configure(EntityTypeBuilder<Tag> builder)

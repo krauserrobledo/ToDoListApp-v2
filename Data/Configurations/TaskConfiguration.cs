@@ -5,9 +5,13 @@ using Tasks = Domain.Models.Task;
 
 namespace Data.Configurations
 {
+    /// <summary>
+    /// Configures the entity type <see cref="Tasks"/> for the database context.
+    /// </summary>
+    /// <remarks>This configuration defines the table name, primary key, property constraints, relationships, 
+    /// 
     public class TaskConfiguration : IEntityTypeConfiguration<Tasks>
     {
-
         public void Configure(EntityTypeBuilder<Tasks> builder)
         {
             builder.ToTable("Tasks");
@@ -46,7 +50,6 @@ namespace Data.Configurations
                 .WithOne(st => st.Task)
                 .HasForeignKey(st => st.TaskId)
                 .OnDelete(DeleteBehavior.Cascade);
-
             // Indexes
             builder.HasIndex(t => new { t.Title, t.UserId })
                 .IsUnique(); // Unique index to prevent duplicate task titles for the same user
