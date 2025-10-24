@@ -1,6 +1,6 @@
 ﻿using Domain.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using MinimalApi.DTOs;
+using MinimalApi.DTOs.TaskDTOs;
 using System.Security.Claims;
 
 namespace MinimalApi.Endpoints

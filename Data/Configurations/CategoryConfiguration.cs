@@ -18,24 +18,31 @@ namespace Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
+            // Table name
             builder.ToTable("Categories");
+
             // PK
             builder.HasKey(c => c.Id);
+
             // Configure properties
             builder.Property(c => c.Id)
                 .IsRequired()
                 .HasMaxLength(450);
+
             builder.Property(c => c.Name)
                 .IsRequired()
                 .HasMaxLength(100);
+
             builder.Property(c => c.UserId)
                 .IsRequired()
                 .HasMaxLength(450);
+
             // Relationships
             builder.HasMany(c => c.TaskCategories)
                 .WithOne(tc => tc.Category)
                 .HasForeignKey(tc => tc.CategoryId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             // Indexes
             builder.HasIndex(c => new { c.Name, c.UserId })
                 .IsUnique(); // Unique index to prevent duplicate category names for the same user

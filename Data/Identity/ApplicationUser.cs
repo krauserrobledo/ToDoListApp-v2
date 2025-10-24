@@ -12,8 +12,10 @@ namespace Data.Identity
     /// require user management and role-based authentication.</remarks>
     public class ApplicationUser : IdentityUser
     {
+
         // Attributes
         public string? Name { get; set; }
+
         // Navigation properties
         public virtual ICollection<Task> Tasks { get; set; } = [];
         public virtual ICollection<Category> Categories { get; set; } = [];

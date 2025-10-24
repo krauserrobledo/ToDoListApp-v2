@@ -1,7 +1,7 @@
 ﻿using Domain.Abstractions;
 using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
-using MinimalApi.DTOs;
+using MinimalApi.DTOs.CategoryDTOs;
 
 namespace MinimalApi.Endpoints
 {

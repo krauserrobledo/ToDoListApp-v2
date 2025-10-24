@@ -11,6 +11,7 @@ namespace Data.Abstractions
     public interface ITokenService
     {
         string GenerateToken(ApplicationUser user);
+
         ClaimsPrincipal? ValidateToken(string token);
     }
 }
