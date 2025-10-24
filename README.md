@@ -83,7 +83,7 @@
 	
 - Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern.
 
-  - -ICategoryRepository
+  - ICategoryRepository
   - ISubTaskRepository
   - ITagRepository
   - ITaskRepository
