@@ -36,6 +36,7 @@
 # ***5. Data Layer.***
 
 - AppDbContext file created inside Data layer.
+
 - Configurations added :
 
 ```
@@ -82,19 +83,23 @@
 	
 - Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern.
 
-  - ICategoryRepository
+  - -ICategoryRepository
   - ISubTaskRepository
   - ITagRepository
   - ITaskRepository
   - IuserRepository (Deleted)
   - ITokenService
 
-
+- References added for projects:
+  
+	- Data.
+ 	- Domain.
+ 
 # ***7. Minimal API.***
 
-  - This project is set as single startup project in Solution.
+- This project is set as single startup project in Solution.
     
-  - Repositories Dependency Injection register in Program.cs :
+- Repositories Dependency Injection register in Program.cs :
 
   ```
     builder.Services.AddScoped<ITaskRepository,TaskRepository>();
@@ -103,20 +108,32 @@
     builder.Services.AddScoped<ISubTaskRepository, SubTaskRepository>();
   ```
 
-  - DbContext Dependency Injection register in Program.cs:
+- DbContext Dependency Injection register in Program.cs:
+	
   ```
     builder.Services.AddDbContext<AppDbContext>();   
   ```
 
-  - Dependency Injection for Identity implementation in Program.cs.
+- Dependency Injection for Identity implementation in Program.cs.
   
-  - Connection String added on appsettings.json.
+- "Connection String" and "JwtSettings" added on appsettings.json.
 
-  - Packages installation:
+- Packages installation:
 
-    - Microsoft.EntityFrameworkCore.SqlServer.
-    - Microsoft.EntityFrameworkCore.
-    - Microsoft.EntityFrameworkCore.Tools
+	- Microsoft.EntityFrameworkCore.SqlServer.
+	- Microsoft.EntityFrameworkCore.
+	- Microsoft.EntityFrameworkCore.Tools.
+
+- Created folders:
+
+	- DTOs.
+   	- Endpoints.
+
+- DTO and endpoints for auth and other entities added.
+
+- Configuration for JWT added to Program.cs.
+
+- Maps endpoints Registered in Program.cs
 
 
 # ***Next Week´s Sprint (10/20)***
@@ -175,6 +192,8 @@
 # ***Documentation***
 
 - Installed NuGet package Swashbuckle.AspNetCore to generate API documentation.
-- Configurations Added in Program.cs
-- added Endpoints annotations modifing with sintax methods(summary, tags...)
-- Tried endpoints with Swagger help
+- Configurations Added in Program.cs.
+- added Endpoints annotations modifing with sintax methods(summary, tags...).
+- Tried endpoints with Swagger help.
+- Code Documentation by comment lines.
+- Code Spacing and Files separation. 
