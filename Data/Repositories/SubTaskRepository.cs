@@ -1,127 +1,124 @@
-﻿using Application.Abstractions;
+﻿using Domain.Abstractions;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data.Repositories
 {
-    public class SubtaskRepository : ISubtaskRepository
+
+    /// <summary>
+    /// Repository implementation for subtask repository interface
+    /// </summary>
+    /// <param name="context"></param>
+    public class SubtaskRepository(AppDbContext context) : ISubtaskRepository
     {
+
         // DB Context
-        private readonly AppDbContext _context;
-        // Dependency Injection of DbContext would be here
-        public SubtaskRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
+
+        /// <summary>
+        /// Creates a new subtask for the specified task, ensuring that the subtask title is unique within that task.
+        /// </summary>
+        /// <param name="subtask"></param>
+        /// <returns>If subtask already exists returns exception, else returns created subtask</returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<Subtask> CreateSubtask(Subtask subtask)
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(subtask.Title))
-                throw new ArgumentException("SubTask title cannot be null or WhiteSpace.", nameof(subtask.Title));
-            
-            if (subtask.Title.Length > 100)
-                throw new ArgumentException("SubTask title cannot exceed 100 characters.", nameof(subtask.Title));
 
-            if (string.IsNullOrEmpty(subtask.Title))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(subtask.TaskId));
+            // Validation using LINQ throw exception If already exists
+            var existingSubtask = await _context.Subtasks
+                .FirstOrDefaultAsync(st => st.Title == subtask.Title && st.TaskId == subtask.TaskId);
 
-            if (string.IsNullOrWhiteSpace(subtask.TaskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(subtask.TaskId));
+            // set CreatedAt time
+            var currtime = DateTime.UtcNow;
 
+            subtask.CreatedAt = currtime;
 
-            // Generate a new GUID for the ID if not provided
-            if (string.IsNullOrEmpty(subtask.Id) || string.IsNullOrWhiteSpace(subtask.Id))
-                subtask.Id = Guid.NewGuid().ToString();
-
-
-            // Clean up Title and TaskId
-
-            subtask.Title = subtask.Title.Trim();
-            subtask.TaskId = subtask.TaskId.Trim();
+            if (existingSubtask != null)
+                {
+                throw new InvalidOperationException("A subtask with the same title already exists for this task.");
+            }
 
             // Add to DbContext and save changes
             await _context.Subtasks.AddAsync(subtask);
             await _context.SaveChangesAsync();
             return subtask;
-
         }
 
+        /// <summary>
+        /// Deletes a subtask by its ID if it exists.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Returns true if the subtask was deleted, false otherwise.</returns>
         public async Task<bool> DeleteSubtask(string id)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(id))
-                throw new ArgumentException("SubTask ID cannot be null or empty.", nameof(id));
 
-            if(string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("SubTask ID cannot be whitespace.", nameof(id));
+            // Verify Id with LINQ
+            var subtaskExist = await _context.Subtasks
+                .Where(st => st.Id == id)
+                .FirstOrDefaultAsync();
 
-            // Find the SubTask by ID
-            var subTask = await _context.Subtasks.FindAsync(id);
-
-            // If not found, return false
-            if (subTask == null)
-                return false;
-
-            // Remove from DbContext and save changes
-            _context.Subtasks.Remove(subTask);
-            await _context.SaveChangesAsync();
-            return true;
-
+            // If exists delete and save changes
+            if (subtaskExist != null)
+            {
+                _context.Subtasks.Remove(subtaskExist);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
         }
 
+        /// <summary>
+        /// Gets all subtasks associated with a specific task, ordered by descending ID.
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <returns>Collection of Subtasks</returns>
         public async Task<ICollection<Subtask>> GetAllSubtasksByTask(string taskId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if(string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            // Query SubTasks by TaskId
-            var subTasks = await _context.Subtasks
+
+            // Get using linq
+            return await _context.Subtasks
                 .Where(st => st.TaskId == taskId)
+                .OrderByDescending(st => st.CreatedAt)
                 .ToListAsync();
-            return subTasks;
         }
 
-        public Task<Subtask?> GetSubtaskById(string subTaskId)
+        /// <summary>
+        /// Gets a subtask by its ID.
+        /// </summary>
+        /// <param name="subTaskId"></param>
+        /// <returns>Returns existing subtask by FirstDefaultAsync method</returns>
+        public async Task<Subtask?> GetSubtaskById(string subTaskId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(subTaskId))
-                throw new ArgumentException("SubTask ID cannot be null or empty.", nameof(subTaskId));
-            if(string.IsNullOrWhiteSpace(subTaskId))
-                throw new ArgumentException("SubTask ID cannot be whitespace.", nameof(subTaskId));
-            // Query SubTask by ID
-            return _context.Subtasks
-                .FirstOrDefaultAsync(st => st.Id == subTaskId);
+
+            // Get using Linq
+            return await _context.Subtasks
+                .FirstOrDefaultAsync(st =>  st.Id == subTaskId );
         }
 
+        /// <summary>
+        /// Update an existing Subtask by title
+        /// </summary>
+        /// <param name="subTask"></param>
+        /// <returns>Returns updated subtask or null if not found</returns>
         public async Task<Subtask?> UpdateSubtask(Subtask subTask)
         {
-            // Validate input
-            if (subTask == null)
-                throw new ArgumentNullException(nameof(subTask));
 
-            if (string.IsNullOrEmpty(subTask.Id))
-                throw new ArgumentException("SubTask ID cannot be null or empty.");
+            // Find subtask using LINQ
+            var subtaskExist = await _context.Subtasks
+                .Where(t =>  t.Id == subTask.Id)
+                .FirstOrDefaultAsync();
 
-            // Search for existing SubTask
-            var existingSubTask = await _context.Subtasks
-                .FirstOrDefaultAsync(st => st.Id == subTask.Id);
-            // If not found, return null
-            if (existingSubTask == null)
-                return null;
+            // If exists update
+            if (subtaskExist != null)
+            {
+                // Update attribute
+                subtaskExist.Title = subTask.Title ?? subtaskExist.Title;
 
-            // Update fields if provided
-            if (!string.IsNullOrWhiteSpace(subTask.Title))
-                existingSubTask.Title = subTask.Title.Trim();
-
-
-            // Save changes to the database
-            await _context.SaveChangesAsync();
-
-            // Return the updated SubTask
-            return existingSubTask;
-        }
-    
+                // Save changes
+                await _context.SaveChangesAsync();
+                return subtaskExist;
+            }
+            return null;
+        }  
     }
 }

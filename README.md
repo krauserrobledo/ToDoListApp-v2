@@ -76,7 +76,8 @@
 
 - Identity Folder added to contain Application user model.
 
-- Migrations folder generated in this Layer for Data Base Migration
+- Migrations folder generated in this Layer for Data Base Migration.
+  
 
 # ***6. Application Layer.***
 	
@@ -88,10 +89,6 @@
   - ITaskRepository
   - IuserRepository (Deleted)
   - ITokenService
- 
-- Services folder created containing:
-
-  - TokenService
 
 - References added for projects:
   
@@ -138,12 +135,65 @@
 
 - Maps endpoints Registered in Program.cs
 
-# ***8. Next Week´s Sprint (10/20)***
 
-- Solve  DEPENDENCY CYCLE between Application and Data
+# ***Next Week´s Sprint (10/20)***
+
+- JWT
+- Solve DEPENDENCY CYCLE between Application and Data.
 - Modificate Repositories for Linq Qeries addition.
 - Middlewares.
-- JWT finishing.
-- Minimal API Controllers Based finishing.
-- Start Angular Learning. 	
-	
+- Minimal API Controllers Based.
+- Start Angular Learning.
+
+# ***JWT***
+
+- Add configurations in appsetting.json.
+- Interface ITokenService.cs creation in Data/Abstractions.
+- implementing interface TokenService.cs in Data/Services.
+- JWT configuration in Program.cs(Authentication, DI and Middleware)
+- Auth endpoints and DTO's creation.
+- Identity integration.
+
+
+# ***Solving Dependency Cycle***
+
+- Abstractions Folder on Application Project Containning Repository Interfaces for Repository Pattern Moved To Domain Project to solve dependency Cycle.
+
+  - ICategoryRepository.
+  - ISubTaskRepository.
+  - ITagRepository.
+  - ITaskRepository.
+ 
+- Abstractions/ITokenService.cs moved from Appplication project to solve Dependency Cycle.
+
+- Services/TokenService.cs moved from Application Layer to solve dependency Cycle.
+
+
+# ***Linq Queries***
+
+- All Repositories classes were modified to implement LINQ syntax queries
+
+ 
+# ***Middleware***
+
+- Middleware folder created in minimal api Layer.
+- Created ExceptionHandlingMiddleware.cs for global exception handler.
+- Created RequestLoginMiddleware to help in console debug.
+- Middleware Registered in program.cs
+
+
+# ***Minimal API Controller Based***
+
+- DTO Folder Creation containning DTO files used in endpoints.
+- Endpoints Folder Created to contain endpoint files.
+- Created Minimal API Endpoints files using repositories and DTO.
+
+
+# ***Documentation***
+
+- Installed NuGet package Swashbuckle.AspNetCore to generate API documentation.
+- Configurations Added in Program.cs.
+- added Endpoints annotations modifing with sintax methods(summary, tags...).
+- Tried endpoints with Swagger help.
+- Code Documentation by comment lines.
+- Code Spacing and Files separation. 

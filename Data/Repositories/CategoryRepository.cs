@@ -1,203 +1,194 @@
-﻿using Application.Abstractions;
+﻿using Domain.Abstractions;
 using Data.Tools;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Data.Repositories
 {
-    public class CategoryRepository : ICategoryRepository
+    /// <summary>
+    /// Repository implementation for category repository interface
+    /// </summary>
+    /// <param name="context"></param>
+    public class CategoryRepository(AppDbContext context) : ICategoryRepository
     {
-        private readonly AppDbContext _context;
-        public CategoryRepository(AppDbContext context) { 
-            _context = context;
-        }
+        // DbContext instance
+        private readonly AppDbContext _context = context;
 
+        /// <summary>
+        /// Creates a new category for the specified user, ensuring that the category name is unique for that user.
+        /// </summary>
+        /// <remarks>If the <see cref="Category.Id"/> is not provided, a new GUID will be generated. If
+        /// the <see cref="Category.Color"/> is not provided or is invalid, it defaults to white (#FFFFFF).</remarks>
+        /// <param name="category">The <see cref="Category"/> object to create. The <see cref="Category.Name"/> and <see
+        /// cref="Category.UserId"/> properties must be set.</param>
+        /// <returns>The created <see cref="Category"/> object, including its generated or updated properties such as <see
+        /// cref="Category.Id"/> and <see cref="Category.Color"/>.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if a category with the same name already exists for the specified user.</exception>
         public async Task<Category> CreateCategory(Category category)
         {
-            // Validate input
-            if (string.IsNullOrWhiteSpace(category.Name))
-                throw new ArgumentException("Category name cannot be null or WhiteSpace.", nameof(category.Name));
 
-            if (category.Color != null && category.Color.Length > 7)
-                // Default to white if invalid
-                category.Color = "#FFFFFF";
+            // Validate NAME input using LINQ
+            var existingCategory = await _context.Categories
+                 .FirstOrDefaultAsync(c => c.Name == category.Name && c.UserId == category.UserId);
+
+            if (existingCategory != null)
+            {
+                throw new InvalidOperationException("A category with the same name already exists for this user.");
+            }
 
             // Generate a new GUID for the ID if not provided
             if (string.IsNullOrEmpty(category.Id) || string
                 .IsNullOrWhiteSpace(category.Id))
-                category.Id = Guid.NewGuid().ToString();
+                category.Id = Guid
+                    .NewGuid()
+                    .ToString();
 
-            // Clean up and save
-            category.Name = category.Name.Trim();
-            category.UserId = category.UserId.Trim();
-            //category.CreatedBy = null!; // Avoid EF Core tracking issues
-            category.TaskCategories = new List<TaskCategory>();
-
-            await _context.Categories.AddAsync(category);
-            await _context.SaveChangesAsync();
-
-            return category;
-        }
-        public async Task<bool> CategoryExists(string categoryId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(categoryId))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(categoryId));
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(categoryId));
-               
-            // Check existence
-            if (await _context.Categories.AnyAsync(c => c.Id == categoryId))
-                return true;
-
-            return false;
-        }
-
-        public async Task<bool> CategoryNameExists(string name, string userId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(name))
-                throw new ArgumentException("Category name cannot be null or empty.", nameof(name));
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Category name cannot be whitespace.", nameof(name));
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-
-            // Check existence
-            if (await _context.Categories.AnyAsync(c => c.Name == name && c.UserId == userId))
-                return true;
-
-            return false;
-        }
-
-        public async Task<ICollection<Category>> GetCategoriesByUser(string userId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-
-            // Retrieve categories for the user
-            return await _context.Categories
-                .Where(c => c.UserId == userId)
-                .ToListAsync();
-        }
-
-        public async Task<Category?> GetCategoryByTaskId(string taskId, string userId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-
-            // Retrieve the Category associated with the Task for the user
-            var category = await _context.TaskCategories
-                .Include(tc => tc.Category)
-                .Where(tc => tc.TaskId == taskId && tc.Category.UserId == userId)
-                .Select(tc => tc.Category)
-                .FirstOrDefaultAsync();
-
-            return category;
-        }
-
-        public async Task<Category?> GetCategoryById(string categoryId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(categoryId))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(categoryId));
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(categoryId));
-
-            // Retrieve the Category by ID
-            var category = await _context.Categories.FindAsync(categoryId);
-            return category;    
-        }
-
-        public async Task<Category?> UpdateCategory(Category category)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(category.Id))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(category.Id));
-            if (string.IsNullOrWhiteSpace(category.Id))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(category.Id));
-            if (string.IsNullOrWhiteSpace(category.Name))
-                throw new ArgumentException("Category name cannot be null or WhiteSpace.", nameof(category.Name));
-            if (category.Color != null && category.Color.Length > 7)
-                // Default to white if invalid
+            // Validate color default white
+            if (string.IsNullOrEmpty(category.Color))
+                category.Color = "#FFFFFF";
+            else if (!Validations.IsValidHexColor(category.Color))
                 category.Color = "#FFFFFF";
 
-            // Find existing Category
-            var existingCategory = await _context.Categories.FindAsync(category.Id);
-            // Not found
+            // Add to DbContext and save changes
+            await _context.Categories.AddAsync(category);
+            await _context.SaveChangesAsync();
+            return category;
+        }
+
+        /// <summary>
+        /// Updates existing category for a specific user, valdating inputs and ensuring color integrity.
+        /// </summary>
+        /// <remarks>If the <see cref="Category.Color"/> is not provided or is invalid, it defaults to white (#FFFFFF).
+        /// If the category does not exist, null is returned.</remarks> 
+        /// <param name="category"></param>
+        /// <returns></returns>
+        public async Task<Category?> UpdateCategory(Category category)
+        {
+
+            // Validation: Check if category exists using LINQ
+            var existingCategory = await _context.Categories
+                .FirstOrDefaultAsync(c => c.Id == category.Id);
             if (existingCategory == null)
                 return null;
 
-            // Update fields if provided
+            // Validate color default White
+            if (string.IsNullOrWhiteSpace(category.Color))
+                category.Color = "#FFFFFF";
+
+            else if (!Validations.IsValidHexColor(category.Color))
+                category.Color = "#FFFFFF";
+
+            // Update properties if changed
             if (!string.IsNullOrWhiteSpace(category.Name))
-            { 
-                var cleanName = category.Name.Trim();
-                if (cleanName.Length > 0)
-                    existingCategory.Name = cleanName;
+                existingCategory.Name = category.Name;
 
-                var exists = await _context.Categories
-                    .AnyAsync(c => c.Name == cleanName && 
-                    c.UserId == existingCategory.UserId && 
-                    c.Id != existingCategory.Id);
+            if (existingCategory.Color != category.Color)
+                existingCategory.Color = category.Color;
 
-                if (exists)
-                    throw new InvalidOperationException("A category named '{cleanName}' already exists for this user.");
-
-                existingCategory.Name = cleanName;
-            }
-            // Update color if provided
-            if (!string.IsNullOrWhiteSpace(category.Color))
-            {   
-                var cleanColor = category.Color.Trim();
-
-                if (!Validations.IsValidHexColor(cleanColor))
-                    existingCategory.Color = cleanColor;
-                else
-                    existingCategory.Color = "#FFFFFF"; // Default to white if invalid
-
-            }
-            // Note: Not updating UserId or CreatedBy to maintain integrity
-            // Save changes
-            _context.Categories.Update(existingCategory);
+            // Update in DbContext and save changes
             await _context.SaveChangesAsync();
             return existingCategory;
-
         }
 
+        /// <summary>
+        /// Deletes a category by its ID if it exists.
+        /// </summary>
+        /// <param name="categoryId"></param>
+        /// <returns>Returns true if the category was found and deleted; otherwise, returns false</returns>
         public async Task<bool> DeleteCategory(string categoryId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(categoryId))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(categoryId));
 
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(categoryId));
+            // Validate input using LINQ
+            var categoryExist = await _context.Categories
+                .FirstOrDefaultAsync(c => c.Id == categoryId);
 
-            // Find the Category by ID
-            var category = await _context.Categories.FindAsync(categoryId);
-            // If not found, return false
-            if (category == null)
-                return false;
-            // Remove from DbContext and save changes
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-            return true;
+            // Delete and save if exists
+            if (categoryExist != null)
+            {
+                _context.Categories.Remove(categoryExist);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a category exists by its ID.
+        /// </summary>
+        /// <param name="categoryId"></param>
+        /// <returns>Returns true if the category exists; otherwise, false.</returns>
+        public async Task<bool> CategoryExists(string categoryId)
+        {
+
+            // Validate input and check existance using LINQ
+            return await _context.Categories
+                .AnyAsync(c => c.Id == categoryId);
+        }
+
+        /// <summary>
+        /// Checks if a category name already exists for a specific user.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="userId"></param>
+        /// <returns>Returns true if a category with the specified name exists for the user; otherwise, false.</returns>
+        public async Task<bool> CategoryNameExists(string name, string userId)
+        {
+
+            // Validate input and check existance using LINQ
+            return await _context.Categories
+                .AnyAsync(c => c.Name == name && c.UserId == userId);
+        }
+
+        /// <summary>
+        /// Get all categories by user id ordered by descending id.
+        /// </summary>
+        /// <remarks> Gets UserId from context</remarks>
+        /// <param name="userId"></param>
+        /// <Returns>Collection of Categories with details</returns>
+        public async Task<ICollection<Category>> GetCategoriesByUser(string userId)
+        {
+
+            // Validate input and retrieve using LINQ
+            return await _context.Categories
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.Id)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get categories from tasks and users
+        /// </summary>
+        /// <remarks>Joins TaskCategories and Categories tables to get categories for a specific task and user</remarks>
+        /// <param name="taskId"></param>
+        /// <param name="userId"></param>
+        /// <returns>Returns categories async List</returns>
+        public async Task<ICollection<Category>> GetCategoriesByTaskId(string taskId, string userId)
+        {
+
+            // Validate input and retrieve using LINQ
+            return await _context.Categories
+                .Where(c => c.UserId == userId)
+                .Join(_context.TaskCategories,
+                      c => c.Id,
+                      tc => tc.CategoryId,
+                      (c, tc) => new { Category = c, TaskCategory = tc })
+                .Where(joined => joined.TaskCategory.TaskId == taskId)
+                .Select(joined => joined.Category)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get a specific category by id
+        /// </summary>
+        /// <remarks>Returns null if not found</remarks>
+        /// <param name="categoryId"></param>
+        /// <returns>Returns Categories by FirstDefaultAsync method</returns>
+        public async Task<Category?> GetCategoryById(string categoryId)
+        {
+
+            // Validate input and retrieve using LINQ
+            return await _context.Categories
+                .FirstOrDefaultAsync(c => c.Id == categoryId);
         }
     }
 }

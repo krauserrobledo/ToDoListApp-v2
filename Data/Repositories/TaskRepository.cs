@@ -1,4 +1,4 @@
-﻿using Application.Abstractions;
+﻿using Domain.Abstractions;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Task = System.Threading.Tasks.Task;
@@ -6,242 +6,169 @@ using Tasks = Domain.Models.Task;
 
 namespace Data.Repositories
 {
-    public class TaskRepository : ITaskRepository
+
+    /// <summary>
+    /// Concrete implementation of ITaskRepository using Entity Framework Core.
+    /// </summary>
+    /// <param name="context">HTTP context</param>
+    public class TaskRepository(AppDbContext context) : ITaskRepository
     {
+
         // Dependency Injection of AppDbContext
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _context = context;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskRepository"/> class with the specified database context.
+        /// Creates a new task.
         /// </summary>
-        /// <param name="context">The <see cref="AppDbContext"/> instance used to access the database. Cannot be <see langword="null"/>.</param>
-        public TaskRepository(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>
-        /// Associates a category with a task by creating a new TaskCategory entry in the database. 
-        /// </summary>
-        /// <param name="taskId"></param>
-        /// <param name="categoryId"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public async Task AddCategoryToTask(string taskId, string categoryId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            if (string.IsNullOrEmpty(categoryId))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(categoryId));
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(categoryId));
-
-            // Check if task exists
-            var task = await _context.Tasks.FindAsync(taskId);
-            if (task == null)
-                throw new InvalidOperationException($"Task with ID {taskId} does not exist.");
-
-            // Check if category exists
-            var category = await _context.Categories.FindAsync(categoryId);
-            if (category == null)
-                throw new InvalidOperationException($"Category with ID {categoryId} does not exist.");
-
-            // Check if the association already exists
-            var existingAssociation = await _context.TaskCategories
-                .AnyAsync(tc => tc.TaskId == taskId && tc.CategoryId == categoryId);
-            if (existingAssociation)
-                throw new InvalidOperationException("The category is already associated with the task.");
-
-            // Create new association
-
-            var taskCategory = new TaskCategory()
-            {
-
-                TaskId = taskId,
-                CategoryId = categoryId
-            };
-
-            // Add and save
-
-            _context.TaskCategories.Add(taskCategory);
-            await _context.SaveChangesAsync();
-
-            return;
-
-        }
-        /// <summary>
-        /// Associates a tag with a task by creating a new TaskTag entry in the database. 
-        /// </summary>
-        /// <param name="taskId"></param>
-        /// <param name="tagId"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public async Task AddTagToTask(string taskId, string tagId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            if (string.IsNullOrEmpty(tagId))
-                throw new ArgumentException("Tag ID cannot be null or empty.", nameof(tagId));
-            if (string.IsNullOrWhiteSpace(tagId))
-                throw new ArgumentException("Tag ID cannot be whitespace.", nameof(tagId));
-
-            // Check if task exists
-            var task = await _context.Tasks.FindAsync(taskId);
-            if (task == null)
-                throw new InvalidOperationException($"Task with ID {taskId} does not exist.");
-            // Check if tag exists
-            var tag = await _context.Tags.FindAsync(tagId);
-            if (tag == null)
-                throw new InvalidOperationException($"Tag with ID {tagId} does not exist.");
-            // Check if the association already exists
-            var existingAssociation = await _context.TaskTags
-                .AnyAsync(tt => tt.TaskId == taskId && tt.TagId == tagId);
-            if (existingAssociation)
-                throw new InvalidOperationException("The tag is already associated with the task.");
-            // Create new association
-            var taskTag = new TaskTag()
-            {
-                TaskId = taskId,
-                TagId = tagId
-            };
-            // Add and save
-            _context.TaskTags.Add(taskTag);
-            await _context.SaveChangesAsync();
-            return;
-
-        }
-
+        /// <remarks> Validates before creating a Task</remarks>
+        /// <param name="task"> Task model</param>
+        /// <returns>Task</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a task with the same title already exists for the user.</exception>
         public async Task<Tasks> CreateTask(Tasks task)
         {
-            // Validate input
-            if (task == null)
-                throw new ArgumentNullException(nameof(task), "Task cannot be null.");
-            if (string.IsNullOrWhiteSpace(task.Title))
-                throw new ArgumentException("Task title cannot be null or whitespace.", nameof(task.Title));
-            if (string.IsNullOrWhiteSpace(task.UserId))
-                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.UserId));
+
+            // Validate input and check if exists using LINQ
+            var existingTask = await _context.Tasks
+                .FirstOrDefaultAsync(t => t.Title == task.Title && t.UserId == task.UserId);
+
+            if (existingTask != null)
+
+                throw new InvalidOperationException("A task with the same title already exists for this user.");
+
+            // Status validtion
+            if (!Domain.Constants.TaskStatus.IsValid(task.Status))
+            
+                task.Status = Domain.Constants.TaskStatus.NonStarted;
 
             // Generate a new GUID for the ID if not provided
             if (string.IsNullOrEmpty(task.Id) || string.IsNullOrWhiteSpace(task.Id))
-                task.Id = Guid.NewGuid().ToString();
-            // Default status if not provided
-            if (string.IsNullOrWhiteSpace(task.Status))
-                task.Status = "Non Started";
 
-            // Clean up and initialize collections
-            task.Title = task.Title.Trim();
-            task.UserId = task.UserId.Trim();
-            task.Description = task.Description?.Trim();
-            task.TaskCategories = new List<TaskCategory>();
-            task.TaskTags = new List<TaskTag>();
-            task.Subtasks = new List<Subtask>();
-            // task.CreatedBy = null!; // Avoid EF Core tracking issues
-            // Add and save
+                task.Id = Guid.NewGuid().ToString();
+
+            // Add to DbContext and save changes
             await _context.Tasks.AddAsync(task);
             await _context.SaveChangesAsync();
             return task;
-
-
         }
 
+        /// <summary>
+        /// Updates an existing task.
+        /// </summary>
+        /// <remarks> Validates before updating a Task</remarks>
+        /// <param name="task"> Task entity</param>
+        /// <returns> Existing Task</returns>
+        public async Task<Tasks?> UpdateTask(Tasks task)
+        {
+
+            // Check if task exists using LINQ
+            var existingTask = await _context.Tasks
+                .FirstOrDefaultAsync(t => t.Id == task.Id); 
+
+            if (existingTask == null)
+                return null;
+
+            // Update properties
+            existingTask.Title = task.Title?? existingTask.Title;
+            existingTask.Description = task.Description?? existingTask.Description;
+            existingTask.DueDate = task.DueDate ?? existingTask.DueDate;
+
+            // Status validation
+            if (!Domain.Constants.TaskStatus.IsValid(task.Status))
+                existingTask.Status = Domain.Constants.TaskStatus.NonStarted;
+
+            else
+                existingTask.Status = task.Status ?? existingTask.Status;
+
+            // Save changes
+            await _context.SaveChangesAsync();
+            return existingTask;
+        }
+        /// <summary>
+        /// Deletes a task by its ID.
+        /// </summary>
+        /// <remarks> Validates before deleting a Task</remarks>
+        /// <param name="taskId">Id for a task</param>
+        /// <returns>Boolean value </returns>
         public async Task<bool> DeleteTask(string taskId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            // Find the task by ID
-            var task = await _context.Tasks.FindAsync(taskId);
+            // Get task using LINQ
+            var task = await _context.Tasks
+                .FirstOrDefaultAsync(t => t.Id == taskId);
+
             // If not found, return false
-            if (task == null)
-                return false;
-            // Remove from DbContext and save changes
-            _context.Tasks.Remove(task);
-            await _context.SaveChangesAsync();
-            return true;
+            if (task == null) return false;
+
+            // Remove and save
+            if (task != null)
+            
+                _context.Tasks.Remove(task);
+                await _context.SaveChangesAsync();
+                return true;
         }
 
+        /// <summary>
+        /// Gets a task by its ID.
+        /// </summary>
+        /// <remarks> Retrieves a Task by ID</remarks>
+        /// <param name="taskId">Id for a task</param>
+        /// <returns> Existing Task</returns>
         public async Task<Tasks?> GetTaskById(string taskId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            // Retrieve task
-            var task = await _context.Tasks.FindAsync(taskId);
-            return task;
 
+            // Get task using LINQ
+            return await _context.Tasks
+                .FirstOrDefaultAsync(t => t.Id == taskId);
         }
 
+        /// <summary>
+        /// Gets tasks by user ID.
+        /// </summary>
+        /// <param name="userId"> User Identification</param>
+        /// <returns>List of Tasks</returns>
         public async Task<ICollection<Tasks>> GetTasksByUser(string userId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-            // Retrieve tasks
-            var tasks = await _context.Tasks
+
+            // Get tasks using LINQ
+            return await _context.Tasks
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
-            return tasks;
         }
 
+        /// <summary>
+        /// Gets tasks by user ID with related details.
+        /// </summary>
+        /// <remarks> Retrieves tasks along with their related entities for a specific user</remarks>
+        /// <param name="userId"> User identification</param>
+        /// <returns> Task list by user id</returns>
         public async Task<ICollection<Tasks>> GetTasksByUserWithDetails(string userId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-            // Retrieve tasks with related entities
+
+            // get tasks with related entities using LINQ
             var tasks = await _context.Tasks
                 .Where(t => t.UserId == userId)
+                .Include(t => t.Subtasks)
                 .Include(t => t.TaskCategories)
                     .ThenInclude(tc => tc.Category)
                 .Include(t => t.TaskTags)
                     .ThenInclude(tt => tt.Tag)
                 .ToListAsync();
-            return tasks;
 
+            return tasks;
         }
 
-        public async Task<ICollection<Tasks>> GetTasksWithCategoriesAndTags(string userId)
-        {
-            // Validate input
-            if (string.IsNullOrEmpty(userId))
-                throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("User ID cannot be whitespace.", nameof(userId));
-            // Retrieve tasks with related entities
-            var tasks = await _context.Tasks
-                .Where(t => t.UserId == userId)
-                .Include(t => t.TaskCategories)
-                    .ThenInclude(tc => tc.Category)
-                .Include(t => t.TaskTags)
-                    .ThenInclude(tt => tt.Tag)
-                .ToListAsync();
-            return tasks;
-
-        }
-
+        /// <summary>
+        /// Gets a task by its ID with related details.
+        /// </summary>
+        /// <param name="taskId">Id for a task</param>
+        /// <returns>Task with related details</returns>
+        /// <exception cref="ArgumentException">Thrown when taskId is null or empty</exception>
         public async Task<Tasks?> GetTaskWithDetails(string taskId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
+
+            // Validate Task by Id
             if (string.IsNullOrWhiteSpace(taskId))
                 throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
+
             // Retrieve task with related entities
             var task = await _context.Tasks
                 .Where(t => t.Id == taskId)
@@ -250,103 +177,132 @@ namespace Data.Repositories
                 .Include(t => t.TaskTags)
                     .ThenInclude(tt => tt.Tag)
                 .FirstOrDefaultAsync();
+
             return task;
         }
 
+        /// <summary>
+        /// Gets a task by its ID with related details.
+        /// </summary>
+        /// <remarks> Removes category from task after validating association</remarks>
+        /// <param name="taskId">Id for a task</param>
+        /// <param name="categoryId">Id for a category</param>
+        /// <returns>Task with related details</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the category is not associated with the task.</exception>
         public async Task RemoveCategoryFromTask(string taskId, string categoryId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            if (string.IsNullOrEmpty(categoryId))
-                throw new ArgumentException("Category ID cannot be null or empty.", nameof(categoryId));
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID cannot be whitespace.", nameof(categoryId));
 
-            // Find the association
+            // Validate input AND association using LINQ
             var taskCategory = await _context.TaskCategories
-                .FirstOrDefaultAsync(tc => tc.TaskId == taskId && tc.CategoryId == categoryId);
-
-            if (taskCategory == null)
-                throw new InvalidOperationException("The category is not associated with the task.");
+                .FirstOrDefaultAsync(tc => tc.TaskId == taskId && tc.CategoryId == categoryId) ?? throw new InvalidOperationException("The category is not associated with the task.");
 
             // Remove and save
             _context.TaskCategories.Remove(taskCategory);
             await _context.SaveChangesAsync();
             return;
-
         }
 
+        /// <summary>
+        /// Removes a tag from a task after validating association.
+        /// </summary>
+        /// <remarks> Removes tag from task after validating association</remarks>
+        /// <param name="taskId">Id for a task</param>
+        /// <param name="tagId">Id for a tag</param>
+        /// <returns>Task with related details</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the tag is not associated with the task.</exception>
         public async Task RemoveTagFromTask(string taskId, string tagId)
         {
-            // Validate input
-            if (string.IsNullOrEmpty(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(taskId));
-            if (string.IsNullOrEmpty(tagId))
-                throw new ArgumentException("Tag ID cannot be null or empty.", nameof(tagId));
-            if (string.IsNullOrWhiteSpace(tagId))
-                throw new ArgumentException("Tag ID cannot be whitespace.", nameof(tagId));
-            // Find the association
+
+            // Validate association using LINQ
             var taskTag = await _context.TaskTags
-                .FirstOrDefaultAsync(tt => tt.TaskId == taskId && tt.TagId == tagId);
-            if (taskTag == null)
-                throw new InvalidOperationException("The tag is not associated with the task.");
+                .FirstOrDefaultAsync(tt => tt.TaskId == taskId && tt.TagId == tagId)
+                ?? throw new InvalidOperationException("The tag is not associated with the task.");
+
             // Remove and save
             _context.TaskTags.Remove(taskTag);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Gets a task by its ID with related details.
+        /// </summary>
+        /// <remarks> Adds category to task after validating association</remarks>
+        /// <param name="taskId">Id for a task</param>
+        /// <param name="categoryId">Id for a category</param>
+        /// <returns>Task with related details</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the category is not associated with the task.</exception>
+        public async Task AddCategoryToTask(string taskId, string categoryId)
+        {
+
+            // Validate association using LINQ
+            var existingAssociation = await _context.TaskCategories
+                .AnyAsync(tc => tc.TaskId == taskId && tc.CategoryId == categoryId);
+
+            if (existingAssociation)
+                throw new InvalidOperationException("The category is already associated with the task.");
+
+            // Create new association
+            var taskCategory = new TaskCategory()
+            {
+                TaskId = taskId,
+                CategoryId = categoryId
+            };
+
+            // Add and save
+            _context.TaskCategories.Add(taskCategory);
             await _context.SaveChangesAsync();
             return;
         }
 
-        public async Task<Tasks?> UpdateTask(Tasks task)
+        /// <summary>
+        /// Gets a task by its ID with related details.
+        /// </summary>
+        /// <param name="taskId">Id for a task</param>
+        /// <param name="tagId">Id for a tag</param>
+        /// <returns>Task with related details</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the tag is not associated with the task.</exception>
+        public async Task AddTagToTask(string taskId, string tagId)
         {
-            // Validate input
-            if (task == null)
-                throw new ArgumentNullException(nameof(task), "Task cannot be null.");
-            if (string.IsNullOrEmpty(task.Id))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(task.Id));
-            if (string.IsNullOrWhiteSpace(task.Id))
-                throw new ArgumentException("Task ID cannot be whitespace.", nameof(task.Id));
-            if (string.IsNullOrWhiteSpace(task.Title))
-                throw new ArgumentException("Task title cannot be null or whitespace.", nameof(task.Title));
-            if (string.IsNullOrWhiteSpace(task.UserId))
-                throw new ArgumentException("User ID cannot be null or whitespace.", nameof(task.UserId));
-            // Retrieve existing task
-            var existingTask = await _context.Tasks.FindAsync(task.Id);
-            if (existingTask == null)
-                throw new InvalidOperationException($"Task with ID {task.Id} does not exist.");
-            // Update fields if provided
-            if (!string.IsNullOrWhiteSpace(task.Title))
-                existingTask.Title = task.Title.Trim();
-            if (task.Description != null)
-                existingTask.Description = task.Description.Trim();
-            if (task.DueDate.HasValue)
-                existingTask.DueDate = task.DueDate;
-            if (!string.IsNullOrWhiteSpace(task.Status))
-                existingTask.Status = task.Status.Trim();
-            if (!string.IsNullOrWhiteSpace(task.UserId))
-                existingTask.UserId = task.UserId.Trim();
-            if (existingTask != null)
-            {
-                // Update navigation properties if provided
-                existingTask.Subtasks = task.Subtasks ?? existingTask.Subtasks;
-                existingTask.TaskCategories = task.TaskCategories ?? existingTask.TaskCategories;
-                existingTask.TaskTags = task.TaskTags ?? existingTask.TaskTags;
-            }
-            if (existingTask != null)
-            {
-                // Ensure navigation properties are initialized
-                existingTask.Subtasks ??= new List<Subtask>();
-                existingTask.TaskCategories ??= new List<TaskCategory>();
-                existingTask.TaskTags ??= new List<TaskTag>();
-            }
-            // Save changes
-            await _context.SaveChangesAsync();
-            return existingTask;
 
+            // Validate Task by Id
+            var task = await _context.Tasks.FindAsync(taskId)
+                ?? throw new InvalidOperationException("Task not found.");
+
+            // Validate Tag by Id
+            var tag = await _context.Tags.FindAsync(tagId)
+                ?? throw new InvalidOperationException("Tag not found.");
+
+            // Validate input and association using LINQ
+            var existingAssociation = await _context.TaskTags
+                .AnyAsync(tt => tt.TaskId == taskId && tt.TagId == tagId);
+            if (existingAssociation)
+                throw new InvalidOperationException("The tag is already associated with the task.");
+
+            // Create new association
+            var taskTag = new TaskTag()
+            {
+                TaskId = taskId,
+                TagId = tagId
+            };
+
+            // Add and save
+            _context.TaskTags.Add(taskTag);
+            await _context.SaveChangesAsync();
+            return;
+        }
+
+        /// <summary>
+        /// Checks if a task title exists for a specific user.
+        /// </summary>
+        /// <remarks> Validates if task title exists for a user</remarks>
+        /// <param name="title">The title of the task.</param>
+        /// <param name="userId">Id for user</param>
+        /// <returns>Boolean value</returns>
+        public async Task<bool> TaskTitleExists(string title, string userId)
+        {
+
+            return await _context.Tasks
+                .AnyAsync(t => t.Title.Equals(title, StringComparison.CurrentCultureIgnoreCase) && t.UserId == userId);
         }
     }
 }

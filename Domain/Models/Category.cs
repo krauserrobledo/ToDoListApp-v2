@@ -1,10 +1,11 @@
-﻿
-
-namespace Domain.Models;
-
+﻿namespace Domain.Models;
+/// <summary>
+/// Category entity representing a task category
+/// </summary>
 
 public class Category
 {
+
     public required string Id { get; set; }
 
     public string Name { get; set; } = null!;

@@ -1,5 +1,8 @@
 ﻿namespace Domain.Models;
 
+/// <summary>
+/// Class representing a Task entity
+/// </summary>
 public class Task
 {
     public required string Id { get; set; }
